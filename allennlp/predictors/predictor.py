@@ -1,6 +1,8 @@
-from typing import List, Iterator
+from typing import List, Iterator, Dict 
 import json
 from contextlib import contextmanager
+
+import numpy as np
 
 from allennlp.common import Registrable
 from allennlp.common.checks import ConfigurationError
@@ -82,8 +84,8 @@ class Predictor(Registrable):
         -------
         Dict[str, np.ndarray]
             Dictionary of gradient entries for each input fed into the model.
-            The keys have the form "grad_input_1", "grad_input_2", ... up to
-            the number of inputs given. 
+            The keys have the form ``{grad_input_1: ..., grad_input_2: ... }``
+            up to the number of inputs given. 
 
         Notes
         -----
@@ -168,23 +170,23 @@ class Predictor(Registrable):
         """
 
         for key, grad in grads.items():
-        grad = np.sum(grad, axis=1)
-        total_score_pos = 0
-        total_score_neg = 0
-        for idx, s in enumerate(grad):
-            if s < 0:
-                total_score_neg = total_score_neg + math.fabs(s)
-            else:
-                total_score_pos = total_score_pos + s
-        for idx, s in enumerate(grad):
-            if s < 0:
-                # / by 2 to get max of -0.5
-                grad[idx] = (s / total_score_neg) / 2  
-            else:
-                grad[idx] = (s / total_score_pos) / 2
-        # center scores
-        grad = [0.5 + n for n in grad]  
-        grads[key] = grad 
+            grad = np.sum(grad, axis=1)
+            total_score_pos = 0
+            total_score_neg = 0
+            for idx, s in enumerate(grad):
+                if s < 0:
+                    total_score_neg = total_score_neg + math.fabs(s)
+                else:
+                    total_score_pos = total_score_pos + s
+            for idx, s in enumerate(grad):
+                if s < 0:
+                    # / by 2 to get max of -0.5
+                    grad[idx] = (s / total_score_neg) / 2  
+                else:
+                    grad[idx] = (s / total_score_pos) / 2
+            # center scores
+            grad = [0.5 + n for n in grad]  
+            grads[key] = grad 
         return grads 
 
 
