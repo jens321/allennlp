@@ -97,6 +97,8 @@ class Predictor(Registrable):
         """
         instance = self._json_to_instance(inputs)
         outputs = self._model.forward_on_instance(instance)
+        # Predictions to labels is specific to each predictor,
+        # but get_gradients need to be on base class => needs reworking! 
         new_instances = self.predictions_to_labels(instance, outputs)
 
         self._register_hooks()

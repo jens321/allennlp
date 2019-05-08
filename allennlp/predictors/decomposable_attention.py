@@ -46,3 +46,9 @@ class DecomposableAttentionPredictor(Predictor):
         returns them normalized and sanitized.  
         """
         return sanitize(self._normalize(self.get_gradients(inputs)))
+
+    @overrides
+    def predictions_to_labels(self, instance: Instance, outputs: Dict[str, np.ndarray]) -> List[Instance]:
+        label = np.argmax(outputs['label_logits'])
+        instance.add_field('label', LabelField(int(label), skip_indexing=True))
+        return [instance]
