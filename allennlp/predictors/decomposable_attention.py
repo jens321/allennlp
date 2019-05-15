@@ -1,8 +1,13 @@
+from typing import List, Dict 
+
+import numpy as np
 
 from overrides import overrides
 from allennlp.common.util import JsonDict, sanitize 
 from allennlp.data import Instance
+from allennlp.data.fields import LabelField
 from allennlp.predictors.predictor import Predictor
+from allennlp.modules.text_field_embedders import BasicTextFieldEmbedder
 
 
 @Predictor.register('textual-entailment')
@@ -45,7 +50,7 @@ class DecomposableAttentionPredictor(Predictor):
         Gets the gradients of the loss with respect to the input and
         returns them normalized and sanitized.  
         """
-        return sanitize(self._normalize(self.get_gradients(inputs)))
+        return sanitize(self._normalize(self.get_gradients(self.get_model_predictions(inputs))))
 
     @overrides
     def predictions_to_labels(self, instance: Instance, outputs: Dict[str, np.ndarray]) -> List[Instance]:

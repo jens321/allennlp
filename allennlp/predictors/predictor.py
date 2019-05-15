@@ -3,11 +3,15 @@ import json
 from contextlib import contextmanager
 
 import numpy as np
+import torch 
+import math 
 
+from allennlp.modules.text_field_embedders import BasicTextFieldEmbedder
 from allennlp.common import Registrable
 from allennlp.common.checks import ConfigurationError
 from allennlp.common.util import JsonDict, sanitize
 from allennlp.data import DatasetReader, Instance
+from allennlp.data.dataset import Batch
 from allennlp.models import Model
 from allennlp.models.archival import Archive, load_archive
 
@@ -72,21 +76,41 @@ class Predictor(Registrable):
         """
         raise NotImplementedError
 
-    def get_gradients(self, inputs: JsonDict) -> Dict[str, np.ndarray]:
+    def attack_from_json(self, inputs: JsonDict) -> JsonDict:
+        """
+        Uses the gradients from :func:`get_gradients` to provide 
+        adversarial attacks for specific models. 
+        Raises
+        ------
+        NotImplementedError
+            This method should be overriden by the specific predictor class of each
+            predictor.
+        """
+        raise NotImplementedError
+
+    def get_model_predictions(self, inputs: JsonDict) -> List[Instance]:
+        """
+        TODO
+        """
+        instance = self._json_to_instance(inputs)
+        outputs = self._model.forward_on_instance(instance)
+        # Predictions to labels is specific to each predictor,
+        # but get_gradients need to be on base class => needs reworking! 
+        new_instances = self.predictions_to_labels(instance, outputs)
+        return new_instances
+
+    def get_gradients(self, instances: List[Instance]) -> Dict[str, np.ndarray]:
         """
         Gets the gradients of the loss with respect to the model inputs. 
-
         Parameters
         ----------
-        inputs: JsonDict
-
+        instances: List[Instance]
         Returns
         -------
         Dict[str, np.ndarray]
             Dictionary of gradient entries for each input fed into the model.
             The keys have the form ``{grad_input_1: ..., grad_input_2: ... }``
             up to the number of inputs given. 
-
         Notes
         -----
         Takes a ``JsonDict`` representing the inputs of the model and converts
@@ -95,26 +119,17 @@ class Predictor(Registrable):
         layer of the model. Calls :func:`backward` on the loss and then removes the
         hooks. 
         """
-        instance = self._json_to_instance(inputs)
-        outputs = self._model.forward_on_instance(instance)
-        # Predictions to labels is specific to each predictor,
-        # but get_gradients need to be on base class => needs reworking! 
-        new_instances = self.predictions_to_labels(instance, outputs)
-
         self._register_hooks()
 
-        dataset = Batch(new_instances)
+        dataset = Batch(instances)
         dataset.index_instances(self._model.vocab)
 
         # Using forward_on_instances converts the output into numpy arrays
         # instead of keeping the original torch Tensors, so rn we're using the 
         # forward function instead. 
         outputs = self._model.decode(self._model.forward(**dataset.as_tensor_dict()))
-        
-        logits = outputs['label_logits']
-        label = torch.max(logits, 1)[1]
 
-        loss = self._model._loss(logits, label)
+        loss = outputs['loss']
 
         # Zero out computation graph
         self._model.zero_grad()
@@ -126,9 +141,9 @@ class Predictor(Registrable):
         for hook in self.hooks:
             hook.remove()
 
-        grad_dict = Dict()
+        grad_dict = dict()
         for idx, grad in enumerate(self.extracted_grads):
-            key = 'grad_input' + str(idx + 1)
+            key = 'grad_input_' + str(idx + 1)
             # squeeze to remove batch dimension
             grad_dict[key] = grad.squeeze_(0).detach().cpu().numpy()
 
@@ -146,8 +161,16 @@ class Predictor(Registrable):
         self.hooks = []
 
         def hook_layers(module, grad_in, grad_out):
-            # grad_in is a tuple with gradients at first slot
+            # grad_in: the gradient with respect to the input of module
+            # grad_out: the gradient with respect to the output of module
+            print('grad_in shape', grad_in[0].shape)
+            print('grad_out shape', grad_out[0].shape)
+            print('grad_in values', grad_in)
+            print('grad_out values', grad_out)
             self.extracted_grads.append(grad_in[0])
+
+        def fhook(module, input, output):
+            output.mul_(10)
 
         # Register the hooks
         for module in self._model.modules():
@@ -155,8 +178,10 @@ class Predictor(Registrable):
             # be more general; just "Embedding" does not work
             # for Elmo 
             if isinstance(module, BasicTextFieldEmbedder):
-                hook = module.register_backward_hook(hook_layers)
-                self.hooks.append(hook)
+                backward_hook = module.register_backward_hook(hook_layers)
+                # forward_hook = module.register_forward_hook(fhook)
+                self.hooks.append(backward_hook)
+                # self.hooks.append(forward_hook)
 
     def _normalize(self, grads: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
         """
