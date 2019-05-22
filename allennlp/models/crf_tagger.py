@@ -145,6 +145,10 @@ class CrfTagger(Model):
                 tokens: Dict[str, torch.LongTensor],
                 tags: torch.LongTensor = None,
                 metadata: List[Dict[str, Any]] = None,
+                # NOTE
+                # Added mask to parameters to be able
+                # to take specific gradients! 
+                mask: torch.LongTensor = None,
                 # pylint: disable=unused-argument
                 **kwargs) -> Dict[str, torch.Tensor]:
         # pylint: disable=arguments-differ
@@ -180,6 +184,7 @@ class CrfTagger(Model):
             A scalar loss to be optimised. Only computed if gold label ``tags`` are provided.
         """
         embedded_text_input = self.text_field_embedder(tokens)
+        print("BACKPROP MASK", mask)
         mask = util.get_text_field_mask(tokens)
 
         if self.dropout:

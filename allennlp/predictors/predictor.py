@@ -93,7 +93,6 @@ class Predictor(Registrable):
         TODO
         """
         instance = self._json_to_instance(inputs)
-        print('very first instance', instance)
         outputs = self._model.forward_on_instance(instance)
         # Predictions to labels is specific to each predictor,
         # but get_gradients need to be on base class => needs reworking! 
@@ -129,6 +128,7 @@ class Predictor(Registrable):
         # instead of keeping the original torch Tensors, so rn we're using the 
         # forward function instead. 
         outputs = self._model.decode(self._model.forward(**dataset.as_tensor_dict()))
+        print('OUTPUTS', outputs)
 
         loss = outputs['loss']
 
