@@ -93,6 +93,7 @@ class Predictor(Registrable):
         TODO
         """
         instance = self._json_to_instance(inputs)
+        print('very first instance', instance)
         outputs = self._model.forward_on_instance(instance)
         # Predictions to labels is specific to each predictor,
         # but get_gradients need to be on base class => needs reworking! 
@@ -163,10 +164,10 @@ class Predictor(Registrable):
         def hook_layers(module, grad_in, grad_out):
             # grad_in: the gradient with respect to the input of module
             # grad_out: the gradient with respect to the output of module
-            print('grad_in shape', grad_in[0].shape)
-            print('grad_out shape', grad_out[0].shape)
-            print('grad_in values', grad_in)
-            print('grad_out values', grad_out)
+            # print('grad_in shape', grad_in[0].shape)
+            # print('grad_out shape', grad_out[0].shape)
+            # print('grad_in values', grad_in)
+            # print('grad_out values', grad_out)
             self.extracted_grads.append(grad_in[0])
 
         def fhook(module, input, output):

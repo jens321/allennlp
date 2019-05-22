@@ -138,7 +138,7 @@ class NumericallyAugmentedQaNet(Model):
                 answer_as_counts: torch.LongTensor = None,
                 metadata: List[Dict[str, Any]] = None) -> Dict[str, torch.Tensor]:
         # pylint: disable=arguments-differ
-
+        print('**answer_as_add_sub_expressions**', answer_as_add_sub_expressions)
         question_mask = util.get_text_field_mask(question).float()
         passage_mask = util.get_text_field_mask(passage).float()
         embedded_question = self._dropout(self._text_field_embedder(question))
@@ -235,6 +235,8 @@ class NumericallyAugmentedQaNet(Model):
             passage_span_start_logits = util.replace_masked_values(passage_span_start_logits, passage_mask, -1e7)
             passage_span_end_logits = util.replace_masked_values(passage_span_end_logits, passage_mask, -1e7)
             # Shape: (batch_size, 2)
+            # logits are based on word tokens! 
+            print('span length', passage_span_start_logits.shape)
             best_passage_span = get_best_span(passage_span_start_logits, passage_span_end_logits)
             # Shape: (batch_size, 2)
             best_passage_start_log_probs = \
@@ -382,6 +384,14 @@ class NumericallyAugmentedQaNet(Model):
                     gold_add_sub_mask = (answer_as_add_sub_expressions.sum(-1) > 0).float()
                     # Shape: (batch_size, # of numbers in the passage, # of combinations)
                     gold_add_sub_signs = answer_as_add_sub_expressions.transpose(1, 2)
+                    
+                    # NOTE
+                    # gold_add_sub_signs seems to be indexing number_sign_log_probs, but
+                    # if it contains a negative, and index error is thrown ...
+                    print('gold_add_sub_signs', gold_add_sub_signs)
+                    # gold_add_sub_signs = torch.tensor([[[ 0],[ 0],[ 1],[-1],[ 0],[ 0],[ 0]]])
+                    # print('number_sign_log_probs', number_sign_log_probs)
+
                     # Shape: (batch_size, # of numbers in the passage, # of combinations)
                     log_likelihood_for_number_signs = torch.gather(number_sign_log_probs, 2, gold_add_sub_signs)
                     # the log likelihood of the masked positions should be 0
@@ -448,8 +458,13 @@ class NumericallyAugmentedQaNet(Model):
                     passage_str = metadata[i]['original_passage']
                     offsets = metadata[i]['passage_token_offsets']
                     predicted_span = tuple(best_passage_span[i].detach().cpu().numpy())
+                    # predicted_span is word indices
+                    print('PREDICTED SPAN', predicted_span)
+                    # word indices get converted into char indices
                     start_offset = offsets[predicted_span[0]][0]
                     end_offset = offsets[predicted_span[1]][1]
+                    print('START OFFSET', start_offset)
+                    print('END OFFSET', end_offset)
                     predicted_answer = passage_str[start_offset:end_offset]
                     answer_json["value"] = predicted_answer
                     answer_json["spans"] = [(start_offset, end_offset)]

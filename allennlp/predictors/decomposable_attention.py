@@ -55,5 +55,7 @@ class DecomposableAttentionPredictor(Predictor):
     @overrides
     def predictions_to_labels(self, instance: Instance, outputs: Dict[str, np.ndarray]) -> List[Instance]:
         label = np.argmax(outputs['label_logits'])
+        # We can skip indexing since we already have the integer representations
+        # of the strings ("entailment", etc.)
         instance.add_field('label', LabelField(int(label), skip_indexing=True))
         return [instance]

@@ -303,6 +303,8 @@ class DropReader(DatasetReader):
         question_offsets = [(token.idx, token.idx + len(token.text)) for token in question_tokens]
 
         # This is separate so we can reference it later with a known type.
+        print('PASSAGE TOKENS!!!!', passage_tokens)
+        print('PASSAGE INDEXERS!!!', token_indexers)
         passage_field = TextField(passage_tokens, token_indexers)
         question_field = TextField(question_tokens, token_indexers)
         fields["passage"] = passage_field
@@ -324,6 +326,8 @@ class DropReader(DatasetReader):
         if answer_info:
             metadata["answer_texts"] = answer_info["answer_texts"]
 
+            # The model seems to accumulate all possible spans that have the right answer
+            # and just send them all back 
             passage_span_fields: List[Field] = \
                 [SpanField(span[0], span[1], passage_field) for span in answer_info["answer_passage_spans"]]
             if not passage_span_fields:
@@ -338,6 +342,9 @@ class DropReader(DatasetReader):
 
             add_sub_signs_field: List[Field] = []
             for signs_for_one_add_sub_expression in answer_info["signs_for_add_sub_expressions"]:
+                # NOTE
+                # From this we can tell that we need the signs as labels in the
+                # SequenceLabelField, but they can be negative ... 
                 add_sub_signs_field.append(SequenceLabelField(signs_for_one_add_sub_expression,
                                                               numbers_in_passage_field))
             if not add_sub_signs_field:
