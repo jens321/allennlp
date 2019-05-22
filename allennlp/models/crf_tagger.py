@@ -185,12 +185,18 @@ class CrfTagger(Model):
         """
         embedded_text_input = self.text_field_embedder(tokens)
         print("BACKPROP MASK", mask)
-        mask = util.get_text_field_mask(tokens)
-
+        if mask is None:
+            mask = util.get_text_field_mask(tokens)
+        else:
+            mask = mask.squeeze(0).type(torch.LongTensor)
+    
         if self.dropout:
             embedded_text_input = self.dropout(embedded_text_input)
 
+        print('got here')
+        print('current mask', mask)
         encoded_text = self.encoder(embedded_text_input, mask)
+        print('got here too')
 
         if self.dropout:
             encoded_text = self.dropout(encoded_text)
