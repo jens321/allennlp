@@ -148,7 +148,7 @@ class CrfTagger(Model):
                 # NOTE
                 # Added mask to parameters to be able
                 # to take specific gradients! 
-                mask: torch.LongTensor = None,
+                mask2: torch.LongTensor = None,
                 # pylint: disable=unused-argument
                 **kwargs) -> Dict[str, torch.Tensor]:
         # pylint: disable=arguments-differ
@@ -184,11 +184,14 @@ class CrfTagger(Model):
             A scalar loss to be optimised. Only computed if gold label ``tags`` are provided.
         """
         embedded_text_input = self.text_field_embedder(tokens)
-        print("BACKPROP MASK", mask)
-        if mask is None:
-            mask = util.get_text_field_mask(tokens)
-        else:
-            mask = mask.squeeze(0).type(torch.LongTensor)
+        # print("BACKPROP MASK", mask)
+        # NOTE
+        # Using a different mask will cause a seg fault in the encoder 
+        # when a zero is in the beginning ...
+        # if mask is None:
+        mask = util.get_text_field_mask(tokens)
+        # else:
+        #     mask = mask.squeeze(0).type(torch.LongTensor)
     
         if self.dropout:
             embedded_text_input = self.dropout(embedded_text_input)
@@ -214,7 +217,7 @@ class CrfTagger(Model):
 
         if tags is not None:
             # Add negative log-likelihood as loss
-            log_likelihood = self.crf(logits, tags, mask)
+            log_likelihood = self.crf(logits, tags, mask2)
             output["loss"] = -log_likelihood
 
             # Represent viterbi tags as "class probabilities" that we can

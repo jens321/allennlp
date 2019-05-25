@@ -47,8 +47,12 @@ class SentenceTaggerPredictor(Predictor):
         """
         predictions = self.get_model_predictions(inputs)
         grads = []
+        # CURRENTLY HAS A SEG FAULT
+        # CAUSE: when the mask starts with a zero, something goes wrong ...
         for prediction in predictions:
             grads.append(sanitize(self._normalize(self.get_gradients([prediction]))))
+            # break
+        print('GRADS', grads)
         return grads
 
     @overrides
