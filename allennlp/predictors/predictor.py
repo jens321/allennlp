@@ -171,7 +171,7 @@ class Predictor(Registrable):
         self.hooks = []
 
         def hook_layers(module, grad_in, grad_out):
-            # grad_in: the gradient with respect to the input of module
+            # grad_in: the gradient with respect to the input of module (last operation)
             # grad_out: the gradient with respect to the output of module
             self.extracted_grads.append(grad_out[0])
 
