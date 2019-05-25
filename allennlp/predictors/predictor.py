@@ -80,6 +80,7 @@ class Predictor(Registrable):
         """
         Uses the gradients from :func:`get_gradients` to provide 
         adversarial attacks for specific models. 
+
         Raises
         ------
         NotImplementedError
@@ -90,27 +91,35 @@ class Predictor(Registrable):
 
     def get_model_predictions(self, inputs: JsonDict) -> List[Instance]:
         """
-        TODO
+        Converts incoming json to a :class:`~allennlp.data.instance.Instance`
+        and adds labels to the :class:`~allennlp.data.instance.Instance`s given
+        by the model's output. 
+
+        Returns
+        -------
+        List[instance]
+            A list of :class:`~allennlp.data.instance.Instance`s
         """
         instance = self._json_to_instance(inputs)
         outputs = self._model.forward_on_instance(instance)
-        # Predictions to labels is specific to each predictor,
-        # but get_gradients need to be on base class => needs reworking! 
         new_instances = self.predictions_to_labels(instance, outputs)
         return new_instances
 
     def get_gradients(self, instances: List[Instance]) -> Dict[str, np.ndarray]:
         """
         Gets the gradients of the loss with respect to the model inputs. 
+
         Parameters
         ----------
         instances: List[Instance]
+
         Returns
         -------
         Dict[str, np.ndarray]
             Dictionary of gradient entries for each input fed into the model.
             The keys have the form ``{grad_input_1: ..., grad_input_2: ... }``
             up to the number of inputs given. 
+            
         Notes
         -----
         Takes a ``JsonDict`` representing the inputs of the model and converts
@@ -148,7 +157,7 @@ class Predictor(Registrable):
             # squeeze to remove batch dimension
             grad_dict[key] = grad.squeeze_(0).detach().cpu().numpy()
 
-        return grad_dict 
+        return grad_dict, outputs 
 
     def _register_hooks(self):
         """
@@ -164,11 +173,7 @@ class Predictor(Registrable):
         def hook_layers(module, grad_in, grad_out):
             # grad_in: the gradient with respect to the input of module
             # grad_out: the gradient with respect to the output of module
-            # print('grad_in shape', grad_in[0].shape)
-            # print('grad_out shape', grad_out[0].shape)
-            # print('grad_in values', grad_in)
-            # print('grad_out values', grad_out)
-            self.extracted_grads.append(grad_in[0])
+            self.extracted_grads.append(grad_out[0])
 
         def fhook(module, input, output):
             output.mul_(10)

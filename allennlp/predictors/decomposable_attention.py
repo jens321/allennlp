@@ -50,7 +50,7 @@ class DecomposableAttentionPredictor(Predictor):
         Gets the gradients of the loss with respect to the input and
         returns them normalized and sanitized.  
         """
-        return sanitize(self._normalize(self.get_gradients(self.get_model_predictions(inputs))))
+        return sanitize(self._normalize(self.get_gradients(self.get_model_predictions(inputs))[0]))
 
     @overrides
     def predictions_to_labels(self, instance: Instance, outputs: Dict[str, np.ndarray]) -> List[Instance]:
