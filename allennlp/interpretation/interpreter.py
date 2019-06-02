@@ -1,4 +1,4 @@
-from allennlp.common.util import JsonDict, sanitize, normalize
+from allennlp.common.util import JsonDict
 from allennlp.common import Registrable 
 
 class Interpreter(Registrable):
