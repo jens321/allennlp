@@ -6,7 +6,7 @@ import numpy as np
 import torch 
 import math 
 
-from allennlp.modules.text_field_embedders import BasicTextFieldEmbedder
+from allennlp.modules.text_field_embedders import TextFieldEmbedder
 from allennlp.common import Registrable
 from allennlp.common.checks import ConfigurationError
 from allennlp.common.util import JsonDict, sanitize
@@ -67,33 +67,21 @@ class Predictor(Registrable):
         """
         Uses the gradients from :func:`get_gradients` to provide 
         normalized interpretations for specific models. 
-
-        Raises
-        ------
-        NotImplementedError
-            This method should be overriden by the specific predictor class of each
-            predictor.
         """
-        raise NotImplementedError
+        raise RuntimeError("You need to implement this method if you want to give model interpretations.")
 
     def attack_from_json(self, inputs: JsonDict) -> JsonDict:
         """
         Uses the gradients from :func:`get_gradients` to provide 
         adversarial attacks for specific models. 
-
-        Raises
-        ------
-        NotImplementedError
-            This method should be overriden by the specific predictor class of each
-            predictor.
         """
-        raise NotImplementedError
+        raise RuntimeError("You need to implement this method if you want to give model attacks.")
 
-    def get_model_predictions(self, inputs: JsonDict) -> List[Instance]:
+    def inputs_to_labeled_instances(self, inputs: JsonDict) -> List[Instance]:
         """
-        Converts incoming json to a :class:`~allennlp.data.instance.Instance`
-        and adds labels to the :class:`~allennlp.data.instance.Instance`s given
-        by the model's output. 
+        Converts incoming json to a :class:`~allennlp.data.instance.Instance`,
+        runs the model with the newly created instance, and adds labels to the
+        :class:`~allennlp.data.instance.Instance`s given by the model's output. 
 
         Returns
         -------
@@ -180,15 +168,20 @@ class Predictor(Registrable):
 
         # Register the hooks
         for module in self._model.modules():
+<<<<<<< Updated upstream
             # We register on BasicTextFieldEmbedder as this seems to 
             # be more general; just "Embedding" does not work
             # for Elmo 
             if isinstance(module, BasicTextFieldEmbedder):
+=======
+            if isinstance(module, TextFieldEmbedder):
+>>>>>>> Stashed changes
                 backward_hook = module.register_backward_hook(hook_layers)
                 # forward_hook = module.register_forward_hook(fhook)
                 self.hooks.append(backward_hook)
                 # self.hooks.append(forward_hook)
 
+<<<<<<< Updated upstream
     def _normalize(self, grads: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
         """
         Normalize the gradients into the range [0,1] for visualization. 
@@ -223,6 +216,8 @@ class Predictor(Registrable):
         return grads 
 
 
+=======
+>>>>>>> Stashed changes
     @contextmanager
     def capture_model_internals(self) -> Iterator[dict]:
         """
@@ -269,8 +264,9 @@ class Predictor(Registrable):
         """
         raise NotImplementedError
 
-    def predictions_to_labels(self, instance: Instance, outputs: Dict[str, np.ndarray]) -> List[Instance]:
+    def predictions_to_labeled_instances(self, instance: Instance, outputs: Dict[str, np.ndarray]) -> List[Instance]:
         """
+<<<<<<< Updated upstream
         Adds labels to the :class:`~allennlp.data.instance.Instance`s passed in. 
 
         Raises
@@ -278,8 +274,11 @@ class Predictor(Registrable):
         NotImplementedError
             This method should be overriden by the specific predictor class of each
             predictor.
+=======
+        Adds labels to the :class:`~allennlp.data.instance.Instance`s passed in.
+>>>>>>> Stashed changes
         """
-        raise NotImplementedError 
+        raise RuntimeError("You need to implement this method if you want to give the model interpretations or attacks.") 
 
     def predict_batch_json(self, inputs: List[JsonDict]) -> List[JsonDict]:
         instances = self._batch_json_to_instances(inputs)
@@ -314,7 +313,11 @@ class Predictor(Registrable):
         Parameters
         ----------
         archive_path The path to the archive.
+<<<<<<< Updated upstream
 
+=======
+        
+>>>>>>> Stashed changes
         Returns
         -------
         A Predictor instance.
@@ -345,3 +348,7 @@ class Predictor(Registrable):
         model.eval()
 
         return Predictor.by_name(predictor_name)(model, dataset_reader)
+<<<<<<< Updated upstream
+=======
+        
+>>>>>>> Stashed changes

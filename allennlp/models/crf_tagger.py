@@ -145,10 +145,6 @@ class CrfTagger(Model):
                 tokens: Dict[str, torch.LongTensor],
                 tags: torch.LongTensor = None,
                 metadata: List[Dict[str, Any]] = None,
-                # NOTE
-                # Added mask to parameters to be able
-                # to take specific gradients! 
-                mask2: torch.LongTensor = None,
                 # pylint: disable=unused-argument
                 **kwargs) -> Dict[str, torch.Tensor]:
         # pylint: disable=arguments-differ
@@ -216,8 +212,9 @@ class CrfTagger(Model):
         output = {"logits": logits, "mask": mask, "tags": predicted_tags}
 
         if tags is not None:
+            loss_mask = [1 if tag != 0 else 0 for tag in tags]
             # Add negative log-likelihood as loss
-            log_likelihood = self.crf(logits, tags, mask2)
+            log_likelihood = self.crf(logits, tags, loss_mask)
             output["loss"] = -log_likelihood
 
             # Represent viterbi tags as "class probabilities" that we can
