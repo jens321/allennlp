@@ -202,8 +202,19 @@ class CrfTagger(Model):
         output = {"logits": logits, "mask": mask, "tags": predicted_tags}
 
         if tags is not None:
+            print('TAGS')
+            print('----')
+            print(tags)
+            print()
+
+            print('LOSS MASK')
+            print('---------')
+            loss_mask = [1 if tag != 0 else 0 for tag in tags]
+            print(loss_mask)
+            print()
+
             # Add negative log-likelihood as loss
-            log_likelihood = self.crf(logits, tags, mask)
+            log_likelihood = self.crf(logits, tags, loss_mask)
             output["loss"] = -log_likelihood
 
             # Represent viterbi tags as "class probabilities" that we can
