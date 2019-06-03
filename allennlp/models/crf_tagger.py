@@ -182,6 +182,10 @@ class CrfTagger(Model):
         embedded_text_input = self.text_field_embedder(tokens)
         mask = util.get_text_field_mask(tokens)
 
+        print("MASK")
+        print("----")
+        print(mask)
+
         if self.dropout:
             embedded_text_input = self.dropout(embedded_text_input)
 
@@ -209,7 +213,8 @@ class CrfTagger(Model):
 
             print('LOSS MASK')
             print('---------')
-            loss_mask = [1 if tag != 0 else 0 for tag in tags]
+            # tags[0] to get past batch dimension 
+            loss_mask = torch.tensor([[1 if tag != 0 else 0 for tag in tags[0]]])
             print(loss_mask)
             print()
 

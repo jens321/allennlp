@@ -13,7 +13,6 @@ from allennlp.models import Model
 from allennlp.predictors.predictor import Predictor
 
 
-
 @Predictor.register('sentence-tagger')
 class SentenceTaggerPredictor(Predictor):
     """
