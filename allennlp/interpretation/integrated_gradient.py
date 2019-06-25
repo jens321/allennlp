@@ -43,8 +43,16 @@ class IntegratedGradient(Interpreter):
     Take the L2-norm across the embedding dimension and normalize. 
     """
     for key, grad in grads.items():
-      l2_grad = numpy.linalg.norm(grad, axis=1)
-      normalized_grad = normalize_by_total_score(l2_grad)
+      # *** L2 STUFF ***
+      # l2_grad = numpy.linalg.norm(grad, axis=1)
+      # normalized_grad = normalize_by_total_score(l2_grad)
+
+      # *** EMB STUFF ***
+      emb_grad = numpy.sum(grad, axis=1)
+      normalized_grad = normalize_by_total_score(emb_grad)
+      print('NORMALIZED GRAD')
+      print('---------------')
+      print(normalized_grad.shape)
       grads[key] = normalized_grad 
 
   def _register_forward_hook(self, alpha: int, inputs: List):

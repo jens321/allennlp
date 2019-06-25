@@ -55,7 +55,7 @@ def normalize_by_total_score(scores: numpy.ndarray) -> numpy.ndarray:
 
     normalized_scores = numpy.copy(scores)
     for idx, score in enumerate(scores):
-        normalized_scores[idx] = score/total_score
+        normalized_scores[idx] = math.fabs(score)/total_score
 
     return normalized_scores
 
