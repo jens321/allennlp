@@ -119,13 +119,14 @@ class Predictor(Registrable):
 
         # grad, = torch.autograd.grad(loss, x, create_graph=True)
     
-        loss.backward(retain_graph=True)        
+        loss.backward(retain_graph=True)       
 
         # for hook in hooks:
         #     hook.remove()
 
         grad_dict = dict()
         for idx, grad in enumerate(embedding_gradients):
+            # print("loop embedding grad", grad)
             key = "grad_input_" + str(idx + 1)
             # grad_dict[key] = grad.detach().cpu().numpy()
             grad_dict[key] = grad
@@ -142,7 +143,6 @@ class Predictor(Registrable):
         will be called multiple times. We append all the embeddings gradients
         to a list.
         """
-
         def hook_layers(module, grad_in, grad_out):
             embedding_gradients.append(grad_out[0])
 
@@ -188,8 +188,8 @@ class Predictor(Registrable):
 
     def predict_instance(self, instance: Instance) -> JsonDict:
         outputs = self._model.forward_on_instance(instance)
-        return outputs
-        #return sanitize(outputs)        
+        # return outputs
+        return sanitize(outputs)        
 
     def predictions_to_labeled_instances(
         self, instance: Instance, outputs: Dict[str, numpy.ndarray]
